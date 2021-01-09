@@ -8,7 +8,14 @@
 #ifndef LIST_H
 #define LIST_H
 
-# include "container.h"
+#include "container.h"
+
+typedef struct linked_list_s linked_list_t;
+struct linked_list_s
+{
+    Object *value;
+    linked_list_t *next;
+};
 
 extern const Class *List;
 

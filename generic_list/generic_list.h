@@ -13,6 +13,7 @@
 */
 
 #include <stdbool.h>
+#include "list.h"
 
 typedef struct node
 {
@@ -21,6 +22,7 @@ typedef struct node
 }   node_t;
 
 typedef node_t *list_t;
+typedef node_t linked_list_t;
 
 /*
 ** Functions

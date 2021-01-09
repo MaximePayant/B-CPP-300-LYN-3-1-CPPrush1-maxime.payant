@@ -12,21 +12,122 @@
 #include "new.h"
 #include "color.h"
 #include "utils.h"
+#include "generic_list.h"
 
-typedef struct linked_list_s linked_list_t;
-struct linked_list_s
+typedef struct ListClass
 {
-    Object *value;
-    linked_list_t *next;
-};
 
-typedef struct
-{
-    Container   base;
-    Class       *_type;
-    size_t      _size;
+/// Members
+
+    Container base;
+    Class *_type;
+    size_t _size;
     linked_list_t *_list;
-}   ListClass;
+
+/// -------
+
+
+/// METHODS
+
+    ///////////////////////////////////////////////////////////////////////////
+    ///
+    /// @brief Push the given element in front of the given list
+    ///
+    /// @see @p push_back() and @p push_at_position() methods
+    ///
+    /// @param front_ptr Address of the list pointer
+    /// @param elem New element to push
+    //
+    bool (*push_front)(list_t *front_ptr, Object *elem);
+
+    ///////////////////////////////////////////////////////////////////////////
+    ///
+    /// @brief Push the given element at back of the given list
+    ///
+    /// @see @p push_front() and @p push_at_position() methods
+    ///
+    /// @param front_ptr Address of the list pointer
+    /// @param elem New element to push
+    //
+    bool (*push_back)(list_t *front_ptr, Object *elem);
+
+    ///////////////////////////////////////////////////////////////////////////
+    ///
+    /// @brief Push the given element at @p pos in the given list
+    ///
+    /// @see @p push_front() and @p push_back() methods
+    ///
+    /// @param front_ptr Address of the list pointer
+    /// @param elem New element to push
+    /// @param pos Position of the new element
+    //
+    bool (*push_at_position)(list_t *front_ptr, Object *elem, unsigned pos);
+
+    ///////////////////////////////////////////////////////////////////////////
+    ///
+    /// @brief Delete the element in front of the given list
+    ///
+    /// @see @p pop_back() and @p pop_at_position() methods
+    ///
+    /// @param front_ptr Address of the list pointer
+    //
+    bool (*pop_front)(list_t *front_ptr);
+
+    ///////////////////////////////////////////////////////////////////////////
+    ///
+    /// @brief Delete the element at back of the given list
+    ///
+    /// @see @p pop_front() and @p pop_at_position() methods
+    ///
+    /// @param front_ptr Address of the list pointer
+    //
+    bool (*pop_back)(list_t *front_ptr);
+
+    ///////////////////////////////////////////////////////////////////////////
+    ///
+    /// @brief Delete the element at @p pos in the given list
+    ///
+    /// @see @p pop_front() and @p pop_back() methods
+    ///
+    /// @param front_ptr Address of the list pointer
+    /// @param pos Position of the element to delete
+    //
+    bool (*pop_at_position)(list_t *front_ptr, unsigned pos);
+
+    ///////////////////////////////////////////////////////////////////////////
+    ///
+    /// @brief Get the element in front of the given list
+    ///
+    /// @see @p get_back() and @p get_at_position() methods
+    ///
+    /// @param front_ptr Address of the list pointer
+    //
+    Object *(*get_front)(list_t *front_ptr);
+
+    ///////////////////////////////////////////////////////////////////////////
+    ///
+    /// @brief Get the element at back of the given list
+    ///
+    /// @see @p get_front() and @p get_at_position() methods
+    ///
+    /// @param front_ptr Address of the list pointer
+    //
+    Object *(*get_back)(list_t *front_ptr);
+
+    ///////////////////////////////////////////////////////////////////////////
+    ///
+    /// @brief Get the element at @p pos of the given list
+    ///
+    /// @see @p get_front() and @p get_back() methods
+    ///
+    /// @param front_ptr Address of the list pointer
+    /// @param pos Position of the element to get
+    //
+    Object *(*get_at_position)(list_t *front_ptr, unsigned pos);
+
+/// -------
+
+} ListClass;
 
 typedef struct {
     Iterator    base;
@@ -34,33 +135,33 @@ typedef struct {
     size_t      _idx;
 }   ListIteratorClass;
 
-static void     ListIterator_ctor(ListIteratorClass *this, va_list *args)
+static void ListIterator_ctor(ListIteratorClass *this, va_list *args)
 {
     this->_list = va_arg(*args, ListClass *);
     this->_idx = va_arg(*args, int);
 }
 
-static bool     ListIterator_eq(ListIteratorClass *this, ListIteratorClass *other)
+static bool ListIterator_eq(ListIteratorClass *this, ListIteratorClass *other)
 {
     return (this->_idx == other->_idx);
 }
 
-static bool     ListIterator_gt(ListIteratorClass *this, ListIteratorClass *other)
+static bool ListIterator_gt(ListIteratorClass *this, ListIteratorClass *other)
 {
     return (this->_idx > other->_idx);
 }
 
-static bool     ListIterator_lt(ListIteratorClass *this, ListIteratorClass *other)
+static bool ListIterator_lt(ListIteratorClass *this, ListIteratorClass *other)
 {
     return (this->_idx < other->_idx);
 }
 
-static void     ListIterator_incr(ListIteratorClass *this)
+static void ListIterator_incr(ListIteratorClass *this)
 {
     this->_idx += 1;
 }
 
-static Object   *ListIterator_getval(ListIteratorClass *this)
+static Object *ListIterator_getval(ListIteratorClass *this)
 {
     linked_list_t *tmp = this->_list->_list;
 
@@ -71,7 +172,7 @@ static Object   *ListIterator_getval(ListIteratorClass *this)
     return (tmp->value);
 }
 
-static void     ListIterator_setval(ListIteratorClass *this, ...)
+static void ListIterator_setval(ListIteratorClass *this, ...)
 {
     va_list list;
     linked_list_t *tmp = this->_list->_list;
@@ -112,6 +213,9 @@ static const ListIteratorClass   ListIteratorDescr = {
 
 static const Class *ListIterator = (const Class *)&ListIteratorDescr;
 
+///////////////////////////////////////////////////////////////////////////////
+///     Constructor
+//
 static void List_ctor(ListClass *this, va_list *args)
 {
     va_list list;
@@ -132,6 +236,9 @@ static void List_ctor(ListClass *this, va_list *args)
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+///     Destructor
+//
 static void List_dtor(ListClass *this)
 {
     linked_list_t *tmp = this->_list;
@@ -145,6 +252,9 @@ static void List_dtor(ListClass *this)
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+///     Dump
+//
 static size_t List_str_len(ListClass *this, char const *delim)
 {
     linked_list_t *tmp = this->_list;
@@ -164,7 +274,7 @@ static size_t List_str_len(ListClass *this, char const *delim)
     + strlen(LGREEN) + strlen(RESET);
     return (len);
 }
-
+//
 static char *List_str(ListClass *this)
 {
     char *result = NULL;
@@ -188,37 +298,30 @@ static char *List_str(ListClass *this)
     return result;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+///     Get size
+//
 static size_t List_len(ListClass *this)
 {
     return (this->_size);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+///     Get iterator
+//
 static Iterator *List_begin(ListClass *this)
 {
     return (new(ListIterator, this, 0));
 }
-
+//
 static Iterator *List_end(ListClass *this)
 {
     return (new(ListIterator, this, this->_size));
 }
 
-static Object *List_getitem(ListClass *this, ...)
-{
-    va_list list;
-    size_t idx;
-    linked_list_t *tmp = this->_list;
-
-    va_start(list, this);
-    idx = va_arg(list, size_t);
-    va_end(list);
-    if (idx >= this->_size)
-        return (NULL);
-    for (size_t i = 0; i < idx; ++i)
-        tmp = tmp->next;
-    return (tmp->value);
-}
-
+///////////////////////////////////////////////////////////////////////////////
+///     Modify element
+//
 static void List_setitem(ListClass *this, ...)
 {
     va_list list;
@@ -234,6 +337,100 @@ static void List_setitem(ListClass *this, ...)
         this->_type->__ctor__(tmp->value, &list);
     }
     va_end(list);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+///     Push element
+//
+static bool List_push_front(ListClass *this, Object *obj)
+{
+    bool result = list_add_elem_at_front(&this->_list, obj);
+
+    if (result)
+        this->_size += 1;
+    return (result);
+}
+//
+static bool List_push_back(ListClass *this, Object *obj)
+{
+    bool result = list_add_elem_at_back(&this->_list, obj);
+
+    if (result)
+        this->_size += 1;
+    return (result);
+}
+//
+static bool List_push_position(ListClass *this, Object *obj, unsigned pos)
+{
+    bool result = list_add_elem_at_position(&this->_list, obj, pos);
+
+    if (result)
+        this->_size += 1;
+    return (result);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+///     Remove element
+//
+static bool List_pop_front(ListClass *this)
+{
+    bool result = list_del_elem_at_front(&this->_list);
+
+    if (result)
+        this->_size -= 1;
+    return (result);
+}
+//
+static bool List_pop_back(ListClass *this)
+{
+    bool result = list_del_elem_at_back(&this->_list);
+
+    if (result)
+        this->_size -= 1;
+    return (result);
+}
+//
+static bool List_pop_position(ListClass *this, unsigned pos)
+{
+    bool result = list_del_elem_at_position(&this->_list, pos);
+
+    if (result)
+        this->_size -= 1;
+    return (result);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+///     Get element
+//
+static Object *List_getitem(ListClass *this, ...)
+{
+    va_list list;
+    size_t idx;
+    linked_list_t *tmp = this->_list;
+
+    va_start(list, this);
+    idx = va_arg(list, size_t);
+    va_end(list);
+    if (idx >= this->_size)
+        return (NULL);
+    for (size_t i = 0; i < idx; ++i)
+        tmp = tmp->next;
+    return (tmp->value);
+}
+//
+static Object *List_get_front(ListClass *this)
+{
+    return (list_get_elem_at_front(this->_list));
+}
+//
+static Object *List_get_back(ListClass *this)
+{
+    return (list_get_elem_at_back(this->_list));
+}
+//
+static Object *List_get_position(ListClass *this, unsigned pos)
+{
+    return (list_get_elem_at_position(this->_list, pos));
 }
 
 static const ListClass   _descr = {
@@ -260,7 +457,16 @@ static const ListClass   _descr = {
     },
     ._type = NULL,
     ._size = 0,
-    ._list = NULL
+    ._list = NULL,
+    .push_front = &List_push_front,
+    .push_back = &List_push_back,
+    .push_at_position = &List_push_position,
+    .pop_front = &List_pop_front,
+    .pop_back = &List_pop_back,
+    .pop_at_position = &List_pop_position,
+    .get_front = &List_get_front,
+    .get_back = &List_get_back,
+    .get_at_position = &List_get_position
 };
 
 const Class   *List = (const Class *)&_descr;

@@ -1,6 +1,5 @@
 Makefile
 a.out
-inc
 rsc
 .vscode
 ex*.c
