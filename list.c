@@ -145,6 +145,49 @@ static void List_dtor(ListClass *this)
     }
 }
 
+static size_t List_str_len(ListClass *this, char const *delim)
+{
+    linked_list_t *tmp = this->_list;
+    char *tmp_str = NULL;
+    size_t delim_len = strlen(delim);
+    size_t len = 0;
+
+    for (size_t ctr = 0; ctr < this->_size; ctr += 1) {
+        tmp_str = str(tmp->value);
+        len += strlen(tmp_str);
+        if (ctr < this->_size)
+            len += delim_len;
+        free(tmp_str);
+        tmp = tmp->next;
+    }
+    len += strlen("<List :\n>") + (strlen(ORANGE) * 2)
+    + strlen(LGREEN) + strlen(RESET);
+    return (len);
+}
+
+static char *List_str(ListClass *this)
+{
+    char *result = NULL;
+    char *tmp_str = NULL;
+    char const *delim = "\n    ";
+    size_t len = List_str_len(this, delim);
+    linked_list_t *tmp = this->_list;
+
+    result = malloc(sizeof(char) * (len + 1));
+    result[0] = '\0';
+    my_strcat_wrapper(result, 3, ORANGE, "<List :", LGREEN);
+    for (size_t ctr = 0; ctr < this->_size; ctr += 1) {
+        tmp_str = str(tmp->value);
+        if (ctr < this->_size)
+            strcat(result, delim);
+        strcat(result, tmp_str);
+        free(tmp_str);
+        tmp = tmp->next;
+    }
+    my_strcat_wrapper(result, 3, ORANGE, "\n>", RESET);
+    return result;
+}
+
 static size_t List_len(ListClass *this)
 {
     return (this->_size);
@@ -200,7 +243,7 @@ static const ListClass   _descr = {
             .__name__ = "List",
             .__ctor__ = (ctor_t)&List_ctor,
             .__dtor__ = (dtor_t)&List_dtor,
-            .__str__ = NULL,
+            .__str__ = (to_string_t)&List_str,
             .__add__ = NULL,
             .__sub__ = NULL,
             .__mul__ = NULL,
