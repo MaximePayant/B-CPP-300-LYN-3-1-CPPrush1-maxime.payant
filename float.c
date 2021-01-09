@@ -17,7 +17,7 @@ typedef struct
 
 static void Float_ctor(FloatClass *this, va_list *args)
 {
-    this->value = va_arg(*args, float);
+    this->value = va_arg(*args, double);
 }
 
 static void Float_dtor(FloatClass *this)
@@ -29,10 +29,10 @@ static char *Float_str(FloatClass *this)
 {
     char const *fmt = "<%s (%f)>";
     char const *name = this->base.__name__;
-    float len = snprfloatf(NULL, 0, fmt, name, this->value);
+    float len = snprintf(NULL, 0, fmt, name, this->value);
     char *s = malloc(sizeof(char) * (len + 1));
 
-    snprfloatf(s, len + 1, fmt, name, this->value);
+    snprintf(s, len + 1, fmt, name, this->value);
     return (s);
 }
 

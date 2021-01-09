@@ -17,7 +17,7 @@ typedef struct
 
 static void Char_ctor(CharClass *this, va_list *args)
 {
-    this->value = va_arg(*args, char);
+    this->value = va_arg(*args, int);
 }
 
 static void Char_dtor(CharClass *this)
@@ -29,10 +29,10 @@ static char *Char_str(CharClass *this)
 {
     char const *fmt = "<%s (%c)>";
     char const *name = this->base.__name__;
-    char len = snprcharf(NULL, 0, fmt, name, this->value);
+    char len = snprintf(NULL, 0, fmt, name, this->value);
     char *s = malloc(sizeof(char) * (len + 1));
 
-    snprcharf(s, len + 1, fmt, name, this->value);
+    snprintf(s, len + 1, fmt, name, this->value);
     return (s);
 }
 
