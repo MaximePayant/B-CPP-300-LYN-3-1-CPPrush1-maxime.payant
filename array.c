@@ -62,6 +62,8 @@ static void     ArrayIterator_setval(ArrayIteratorClass *this, ...)
 {
     va_list list;
 
+    if (this->_idx >= this->_array->_size)
+        raise("Out of range");
     va_start(list, this);
     if (this->_idx < this->_array->_size) {
         this->_array->_type->__dtor__(this->_array->_tab[this->_idx]);
