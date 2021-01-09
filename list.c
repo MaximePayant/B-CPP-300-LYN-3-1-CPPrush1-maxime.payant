@@ -10,8 +10,6 @@
 #include "raise.h"
 #include "list.h"
 #include "new.h"
-#include "color.h"
-#include "utils.h"
 
 typedef struct linked_list_s linked_list_t;
 struct linked_list_s
