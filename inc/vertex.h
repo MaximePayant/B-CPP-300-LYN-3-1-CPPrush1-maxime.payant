@@ -13,4 +13,3 @@
 extern const Class  *Vertex;
 
 #endif
-
